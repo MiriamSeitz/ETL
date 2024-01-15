@@ -32,6 +32,8 @@ use exface\Core\DataTypes\DateTimeDataType;
 use exface\Core\DataTypes\BooleanDataType;
 use exface\Core\DataTypes\BinaryDataType;
 use exface\Core\DataTypes\DateDataType;
+use axenox\ETL\Common\LogBooks\FacadeLogbook;
+use axenox\ETL\Events\Flow\OnBeforeETLStepRun;
 
 /**
  * 
@@ -50,6 +52,10 @@ class DataFlowFacade extends AbstractHttpFacade
     protected function createResponse(ServerRequestInterface $request) : ResponseInterface
     {
     	$headers = $this->buildHeadersCommon();
+    	$logbook = new FacadeLogbook($this->getAlias(), $this, $request);
+    	$logbook->setIndentActive(1);
+    	$logbook->addLine('Request recieved.');    	
+    	$this->getWorkbench()->eventManager()->dispatch(new OnBeforeETLStepRun($step));
 
         try {
             $path = $request->getUri()->getPath();
@@ -58,7 +64,8 @@ class DataFlowFacade extends AbstractHttpFacade
             $routeModel = $this->getRouteData($path);
             $requestLogData = $this->logRequestReceived($request);
 
-            // validate webservice swagger
+            // validate webservice swagger            
+            $logbook->addLine('Validating swagger.');
             $response = $this->getSwaggerValidatorResponse($routeModel, $requestLogData, $headers);
             if ($response !== null){
             	return $response;
@@ -67,12 +74,13 @@ class DataFlowFacade extends AbstractHttpFacade
             // handle route requests
             switch(true){
                 case mb_stripos($path, '/swaggerui') !== false:
+                	$logbook->addLine('Building HTML to SwaggerUI.');
                     $content = $this->buildHtmlSwaggerUI('openapi.json');
                     return new Response(200, $this->buildHeadersCommon(), $content);
                     
             	// webservice maintenance requests
             	case mb_stripos($path, '/openapi') !== false && $request->getMethod() === 'GET':
-            		// building functional OpenApi
+            		$logbook->addLine('Creating functional OpenApi definition.');
         		    $swaggerArray = json_decode($routeModel['swagger_json'], true);
         		    $this->addServerPaths($path, $swaggerArray);                    
         		    $this->autogenerateMetamodelSchemas($swaggerArray);                    
@@ -82,10 +90,11 @@ class DataFlowFacade extends AbstractHttpFacade
         		    $response = new Response(200, $headers, $swaggerJson);
         			return $response;        			
             	// webservice dataflow request
-            	default:            	    
+            	default:
             	    $routeUID = $routeModel['UID'];
             		$flowAlias = $routeModel['flow__alias'];
             		$flowRunUID = RunETLFlow::generateFlowRunUid();
+            		$logbook->addLine('Starting webservice: `' . $flowAlias . '`');
             		$requestLogData = $this->logRequestProcessing($requestLogData, $routeUID, $flowRunUID); // flow data update
             		$flowResult = $this->runFlow($flowAlias, $request, $requestLogData); // flow data update
             		$flowOutput = $flowResult->getMessage();
@@ -456,10 +465,14 @@ class DataFlowFacade extends AbstractHttpFacade
                 //<editor-fold desc='Changeable Configuration Block'>
 
                 // the following lines will be replaced by docker/configurator, when it runs in a docker-container
+				
                 window.ui = SwaggerUIBundle({
                     url: '{$openapiUrl}',
                     dom_id: '#swagger-ui',
                     deepLinking: true,
+     				defaultModelsExpandDepth: 4,
+     				docExpansion: 'full',
+     				showExtensions: true,
                     presets: [
                         SwaggerUIBundle.presets.apis,
                         SwaggerUIStandalonePreset
@@ -467,12 +480,8 @@ class DataFlowFacade extends AbstractHttpFacade
                     plugins: [
                         SwaggerUIBundle.plugins.DownloadUrl
                     ],
-                    layout: 'StandaloneLayout',
-					onComplete: () => {
-					      document.querySelectorAll('#swagger-ui section.models button.model-box-control').forEach(btn => btn.click())
-					    }
+                    layout: 'StandaloneLayout'
                     });
-
                     //</editor-fold>
                 };
             </script>
