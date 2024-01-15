@@ -32,6 +32,7 @@ use exface\Core\DataTypes\DateTimeDataType;
 use exface\Core\DataTypes\BooleanDataType;
 use exface\Core\DataTypes\BinaryDataType;
 use exface\Core\DataTypes\DateDataType;
+use axenox\ETL\Facades\Helper\FormularHandler;
 
 /**
  * 
@@ -57,6 +58,13 @@ class DataFlowFacade extends AbstractHttpFacade
             $routePath = rtrim(strstr($path, '/'), '/');
             $routeModel = $this->getRouteData($path);
             $requestLogData = $this->logRequestReceived($request);
+            
+            if ($routeModel['type__name'] === 'Formular'){
+            	$formularHandler = new FormularHandler($routeModel['type__schema_json'], $request->getBody());
+            	$headers = array_merge($headers, ['Content-Type' => 'application/json']);
+            	$response = new Response(200, $headers, $formularHandler->createJson());
+            	return $response;
+            }
 
             // validate webservice swagger
             $response = $this->getSwaggerValidatorResponse($routeModel, $requestLogData, $headers);
@@ -305,6 +313,7 @@ class DataFlowFacade extends AbstractHttpFacade
                 'flow',
                 'flow__alias',
                 'in_url',
+            	'type__name',
             	'type__schema_json',
             	'type__default_response_path',
             	'swagger_json'
@@ -498,7 +507,7 @@ HTML;
 					if (in_array($relatedObjectAlias, $attributeAliasesToAdd)){
 						$schema = ['$ref' => '#/components/schemas/Metamodel Informationen/properties/' . $relatedObjectAlias];
 						$jsonSchema[$objectName]['properties'][$attribute->getAlias()] = $schema;
-						continue;
+						continue 2;
 					}
 				case $dataType instanceof IntegerDataType:
 					$schema = ['type' => 'integer'];
