@@ -3,6 +3,7 @@ namespace axenox\ETL\Facades\Middleware;
 
 use cebe\openapi\exceptions\TypeErrorException;
 use cebe\openapi\exceptions\UnresolvableReferenceException;
+use exface\Core\Facades\AbstractHttpFacade\Middleware\JsonBodyParser;
 use League\OpenAPIValidation\PSR7\Exception\Validation\InvalidParameter;
 use League\OpenAPIValidation\PSR7\Exception\ValidationFailed;
 use Psr\Http\Message\ResponseInterface;

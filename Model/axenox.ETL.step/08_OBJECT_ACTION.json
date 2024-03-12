@@ -87,6 +87,79 @@
             "APP": "0x11ebbc50679eacdabc50025041000001",
             "USE_IN_OBJECT_BASKET_FLAG": 0,
             "DOCS": ""
+        },
+        {
+            "CREATED_ON": "2024-03-11 10:10:10",
+            "MODIFIED_ON": "2024-03-11 12:43:14",
+            "CREATED_BY_USER": "0x11e8fe1c902c8ebea23ee4b318306b9a",
+            "MODIFIED_BY_USER": "0x11e8fe1c902c8ebea23ee4b318306b9a",
+            "UID": "0x11eebb0d29929de0bb0d025041000001",
+            "OBJECT": "0x11ebae9fcb215da2ae9f025041000001",
+            "ACTION_PROTOTYPE": "exface\/core\/Actions\/ShowDialog.php",
+            "ALIAS": "DataflowReorderStepsDialog",
+            "NAME": "Reorder Steps",
+            "SHORT_DESCRIPTION": "Manually reorder steps.",
+            "CONFIG_UXON": {
+                "icon": "sort",
+                "effected_objects": [
+                    "axenox.ETL.step"
+                ],
+                "dialog": {
+                    "widgets": [
+                        {
+                            "object_alias": "axenox.ETL.step",
+                            "widget_type": "DataTree",
+                            "tree_parent_id_attribute_alias": "flow",
+                            "tree_root_uid": "NULL",
+                            "tree_expanded": true,
+                            "paginate": false,
+                            "row_reorder": {
+                                "order_index_attribute_alias": "step_flow_sequence",
+                                "order_direction": "asc"
+                            },
+                            "filters": [
+                                {
+                                    "attribute_alias": "flow",
+                                    "required": true
+                                }
+                            ],
+                            "columns": [
+                                {
+                                    "attribute_alias": "MODIFIED_ON",
+                                    "hidden": true
+                                },
+                                {
+                                    "attribute_alias": "step_flow_sequence"
+                                },
+                                {
+                                    "attribute_alias": "disabled"
+                                },
+                                {
+                                    "attribute_alias": "name"
+                                },
+                                {
+                                    "attribute_alias": "from_object__LABEL"
+                                },
+                                {
+                                    "attribute_alias": "to_object__LABEL"
+                                },
+                                {
+                                    "attribute_alias": "type"
+                                }
+                            ],
+                            "sorters": [
+                                {
+                                    "attribute_alias": "step_flow_sequence",
+                                    "direction": "asc"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            "APP": "0x11ebbc50679eacdabc50025041000001",
+            "USE_IN_OBJECT_BASKET_FLAG": 0,
+            "DOCS": ""
         }
     ],
     "totals_rows": [],
