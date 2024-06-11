@@ -5,6 +5,7 @@ use cebe\openapi\exceptions\TypeErrorException;
 use cebe\openapi\exceptions\UnresolvableReferenceException;
 use exface\Core\DataTypes\JsonDataType;
 use GuzzleHttp\Psr7\Response;
+use League\OpenAPIValidation\PSR7\Exception\Validation\AddressValidationFailed;
 use League\OpenAPIValidation\PSR7\Exception\Validation\InvalidParameter;
 use League\OpenAPIValidation\PSR7\Exception\ValidationFailed;
 use Psr\Http\Message\ResponseInterface;
@@ -79,9 +80,9 @@ final class OpenApiValidationMiddleware implements MiddlewareInterface
         try {
             $matchedOASOperation = $requestValidator->validate($request);
         } catch (ValidationFailed $exception) {
+            $message = $exception instanceof AddressValidationFailed ? $exception->getVerboseMessage() : $exception->getMessage();
             $prev = $exception->getPrevious();
             if ($prev) {
-                $msg = $prev->getMessage();
                 switch (true) {
                     case $prev instanceof SchemaMismatch && str_contains($exception->getMessage(), 'Body'):
                         if ($this->isVerbose($request) && $this->hasJsonBody($request)) {
@@ -91,7 +92,7 @@ final class OpenApiValidationMiddleware implements MiddlewareInterface
                                 JsonDataType::validateJsonSchema($json, $schema);
                             } catch (JsonSchemaValidationError $e) {
                                 $errors = [
-                                    'error' => $exception->getMessage(),
+                                    'error' => $message,
                                     'details' => $e->getErrors()
                                 ];
                                 throw new JsonSchemaValidationError($errors, 'Invalid request body', null, null, $json);
@@ -109,7 +110,7 @@ final class OpenApiValidationMiddleware implements MiddlewareInterface
                 }
             }
 
-            throw new HttpBadRequestError($request, $exception->getMessage(), null, $exception);
+            throw new HttpBadRequestError($request, $message, null, $exception);
         }
         
         // 2. Process request
@@ -124,7 +125,7 @@ final class OpenApiValidationMiddleware implements MiddlewareInterface
             try {
                 $responseValidator->validate($matchedOASOperation, $response);
             } catch (ValidationFailed $exception) {
-                $message = $exception->getVerboseMessage();
+                $message = $exception instanceof AddressValidationFailed ? $exception->getVerboseMessage() : $exception->getMessage();
                 if ($this->isVerbose($request) && $this->hasJsonBody($response)) {
                     try {
                         $schema = $this->facade->getResponseBodySchemaForCurrentRoute($request, $response->getStatusCode());
